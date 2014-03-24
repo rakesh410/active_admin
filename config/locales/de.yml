@@ -53,7 +53,8 @@ de:
       link: "Erstellen"
     batch_actions:
       button_label: "Stapelverarbeitung"
-      delete_confirmation: "Sind Sie sicher dass sie diese %{plural_model} löschen wollen? Dies kann nicht rückgängig gemacht werden"
+      default_confirmation: "Bist du sicher, dass Sie dies tun wollen?"
+      delete_confirmation: "Sind Sie sicher dass sie diese %{plural_model} löschen wollen?"
       succesfully_destroyed:
         one: "Erfolgreich 1 %{model} gelöscht"
         other: "Erfolgreich %{count} %{plural_model} gelöscht"
@@ -75,6 +76,17 @@ de:
       errors:
         empty_text: "Der Kommentar wurde nicht gespeichert, da der Text fehlt."
     devise:
+      username:
+        title: "Benutzername"
+      email:
+        title: "E-Mail-Adresse"
+      subdomain:
+        title: "Subdomain"
+      password:
+        title: "Passwort"
+      sign_up:
+        title: "Registrieren"
+        submit: "Registrieren"
       login:
         title: "Login"
         remember_me: "erinnere dich an mich"
@@ -85,6 +97,9 @@ de:
       change_password:
         title: "Ändern Sie Ihr Passwort"
         submit: "Mein Passwort ändern"
+      resend_confirmation_instructions:
+        title: "Anleitung zur Bestätigung noch mal schicken"
+        submit: "Anleitung zur Bestätigung noch mal schicken"
       links:
         sign_in: "Anmeldung"
         forgot_your_password: "Passwort vergessen?"
@@ -117,3 +132,12 @@ de:
     sessions:
       admin_user:
         signed_in: Erfolgreich als Administrator angemeldet.
+  formtastic:
+    yes: "Ja"
+    no: "Nein"
+    create: "%{model} anlegen"
+    update: "%{model} aktualisieren"
+    submit: "Abschicken"
+    cancel: "Abbrechen"
+    reset: "%{model} zurücksetzen"
+    required: "Pflichtfeld"

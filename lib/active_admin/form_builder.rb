@@ -27,7 +27,7 @@ module ActiveAdmin
       @use_form_buffer ? form_buffers.last << content : content
     end
 
-    def cancel_link(url = {:action => "index"}, html_options = {}, li_attrs = {})
+    def cancel_link(url = {action: "index"}, html_options = {}, li_attrs = {})
       li_attrs[:class] ||= "cancel"
       li_content = template.link_to I18n.t('active_admin.cancel'), url, html_options
       form_buffers.last << template.content_tag(:li, li_content, li_attrs)
@@ -49,9 +49,11 @@ module ActiveAdmin
     end
 
     def has_many(assoc, options = {}, &block)
-      options = {for: assoc, new_record: true}.merge options
-      options[:class] ||= ""
-      options[:class] << "inputs has_many_fields"
+      # remove options that should not render as attributes
+      custom_settings = :new_record, :allow_destroy, :heading, :sortable
+      builder_options = {new_record: true}.merge! options.slice  *custom_settings
+      options         = {for: assoc      }.merge! options.except *custom_settings
+      options[:class] = [options[:class], "inputs has_many_fields"].compact.join(' ')
 
       # Add Delete Links
       form_block = proc do |has_many_form|
@@ -59,29 +61,49 @@ module ActiveAdmin
         contents = block.call has_many_form, index
 
         if has_many_form.object.new_record?
-          contents << template.content_tag(:li, class: 'has_many_delete') do
-            template.link_to I18n.t('active_admin.has_many_delete'), "#", class: 'button',
-              onclick: "$(this).closest('.has_many_fields').remove(); return false;"
+          contents << template.content_tag(:li) do
+            template.link_to I18n.t('active_admin.has_many_remove'), "#", class: 'button has_many_remove'
           end
-        elsif options[:allow_destroy]
-          has_many_form.input :_destroy, as: :boolean, wrapper_html: {class: 'has_many_remove'},
-                                                       label: I18n.t('active_admin.has_many_remove')
+        elsif builder_options[:allow_destroy]
+          has_many_form.input :_destroy, as: :boolean, wrapper_html: {class: 'has_many_delete'},
+                                                       label: I18n.t('active_admin.has_many_delete')
         end
+
+        if builder_options[:sortable]
+          has_many_form.input builder_options[:sortable], as: :hidden
+
+          contents << template.content_tag(:li, class: 'handle') do
+            Iconic.icon :move_vertical
+          end
+        end
+
         contents
       end
 
-      form_buffers.last << with_new_form_buffer do
-        template.content_tag :div, class: "has_many #{assoc}" do
-          unless options.key?(:heading) && !options[:heading]
-            form_buffers.last << template.content_tag(:h3) do
-              options[:heading] || object.class.reflect_on_association(assoc).klass.model_name.human(count: 1.1)
-            end
+      # make sure that the sortable children sorted in stable ascending order
+      if column = builder_options[:sortable]
+        children = object.send(assoc)
+        children = children.sort_by {|o| [o.send(column), o.id]}
+        options[:for] = [assoc,  children]
+      end
+
+      html = without_wrapper do
+        unless builder_options.key?(:heading) && !builder_options[:heading]
+          form_buffers.last << template.content_tag(:h3) do
+            builder_options[:heading] || object.class.reflect_on_association(assoc).klass.model_name.human(count: ::ActiveAdmin::Helpers::I18n::PLURAL_MANY_COUNT)
           end
-
-          inputs options, &form_block
-
-          form_buffers.last << js_for_has_many(assoc, form_block, template, options[:new_record]) if options[:new_record]
         end
+
+        inputs options, &form_block
+
+        form_buffers.last << js_for_has_many(assoc, form_block, template, builder_options[:new_record], options[:class]) if builder_options[:new_record]
+        form_buffers.last
+      end
+
+      form_buffers.last << if @already_in_an_inputs_block
+        template.content_tag :li,  html, class: "has_many_container #{assoc}", 'data-sortable' => builder_options[:sortable]
+      else
+        template.content_tag :div, html, class: "has_many_container #{assoc}", 'data-sortable' => builder_options[:sortable]
       end
     end
 
@@ -131,23 +153,32 @@ module ActiveAdmin
       return_value
     end
 
+    def without_wrapper
+      is_being_wrapped = @already_in_an_inputs_block
+      @already_in_an_inputs_block = false
+
+      html = with_new_form_buffer{ yield }
+
+      @already_in_an_inputs_block = is_being_wrapped
+      html
+    end
+
     # Capture the ADD JS
-    def js_for_has_many(assoc, form_block, template, new_record)
+    def js_for_has_many(assoc, form_block, template, new_record, class_string)
       assoc_reflection = object.class.reflect_on_association assoc
       assoc_name       = assoc_reflection.klass.model_name
       placeholder      = "NEW_#{assoc_name.to_s.upcase.split(' ').join('_')}_RECORD"
       opts = {
-        :for         => [assoc, assoc_reflection.klass.new],
-        :class       => "inputs has_many_fields",
-        :for_options => { child_index: placeholder }
+        for: [assoc, assoc_reflection.klass.new],
+        class: class_string,
+        for_options: { child_index: placeholder }
       }
-      js = with_new_form_buffer{ inputs_for_nested_attributes opts, &form_block }
-      js = template.escape_javascript js
+      html = with_new_form_buffer{ inputs_for_nested_attributes opts, &form_block }
+      text = new_record.is_a?(String) ? new_record : I18n.t('active_admin.has_many_new', model: assoc_name.human)
 
-      onclick = "$(this).before('#{js}'.replace(/#{placeholder}/g, $(this).siblings('fieldset').length)); return false;"
-      text    = new_record.is_a?(String) ? new_record : I18n.t('active_admin.has_many_new', model: assoc_name.human)
-
-      template.link_to(text, "#", onclick: onclick, class: "button").html_safe
+      template.link_to text, '#', class: "button has_many_add", data: {
+        html: CGI.escapeHTML(html).html_safe, placeholder: placeholder
+      }
     end
 
   end

@@ -25,7 +25,7 @@ module MethodOrProcHelper
   # or instance_exec a proc passing in the object as the first parameter. This
   # method wraps that pattern.
   #
-  # Calling with a Symbol:
+  # Calling with a String or Symbol:
   #
   #     call_method_or_proc_on(@my_obj, :size) same as @my_obj.size
   #
@@ -35,11 +35,11 @@ module MethodOrProcHelper
   #     call_method_or_proc_on(@my_obj, proc)
   #
   # By default, the Proc will be instance_exec'd within self. If you would rather
-  # not instance exec, but just call the Proc, then pass along `:exec => false` in
+  # not instance exec, but just call the Proc, then pass along `exec: false` in
   # the options hash.
   #
   #     proc = Proc.new{|s| s.size }
-  #     call_method_or_proc_on(@my_obj, proc, :exec => false)
+  #     call_method_or_proc_on(@my_obj, proc, exec: false)
   #
   # You can pass along any necessary arguments to the method / Proc as arguments. For
   # example:
@@ -47,7 +47,7 @@ module MethodOrProcHelper
   #     call_method_or_proc_on(@my_obj, :find, 1) #=> @my_obj.find(1)
   #
   def call_method_or_proc_on(receiver, *args)
-    options = { :exec => true }.merge(args.extract_options!)
+    options = { exec: true }.merge(args.extract_options!)
 
     symbol_or_proc = args.shift
 

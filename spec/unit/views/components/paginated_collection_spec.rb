@@ -17,18 +17,20 @@ describe ActiveAdmin::Views::PaginatedCollection do
 
     # Helper to render paginated collections within an arbre context
     def paginated_collection(*args)
-      render_arbre_component({:paginated_collection_args => args}, view) do
+      render_arbre_component({paginated_collection_args: args}, view) do
         paginated_collection(*paginated_collection_args)
       end
     end
 
     let(:collection) do
-      posts = [Post.new(:title => "First Post"), Post.new(:title => "Second Post"), Post.new(:title => "Third Post")]
+      posts = [Post.new(title: "First Post"), Post.new(title: "Second Post"), Post.new(title: "Third Post")]
       Kaminari.paginate_array(posts).page(1).per(5)
     end
 
     before do
       collection.stub(:reorder) { collection }
+      collection.stub(:scoped) { collection }
+      collection.stub(:group_values) { [] } unless collection.respond_to?(:group_values)
     end
 
     context "when specifying collection" do
@@ -37,7 +39,7 @@ describe ActiveAdmin::Views::PaginatedCollection do
       end
 
       it "should set :collection as the passed in collection" do
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>all 3</b> posts"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>all 3</b> posts"
       end
 
       it "should raise error if collection has no pagination scope" do
@@ -53,23 +55,23 @@ describe ActiveAdmin::Views::PaginatedCollection do
         Kaminari.paginate_array(posts).page(1).per(5)
       end
 
-      let(:pagination) { paginated_collection(collection, :param_name => :post_page) }
+      let(:pagination) { paginated_collection(collection, param_name: :post_page) }
 
       it "should customize the page number parameter in pagination links" do
-        pagination.children.last.content.should match(/\/admin\/posts\?post_page=2/)
+        expect(pagination.children.last.content).to match(/\/admin\/posts\?post_page=2/)
       end
     end
 
-    context "when specifying :download_links => false option" do
+    context "when specifying download_links: false option" do
       let(:collection) do
         posts = 10.times.map{ Post.new }
         Kaminari.paginate_array(posts).page(1).per(5)
       end
 
-      let(:pagination) { paginated_collection(collection, :download_links => false) }
+      let(:pagination) { paginated_collection(collection, download_links: false) }
 
       it "should not render download links" do
-        pagination.find_by_tag('div').last.content.should_not match(/Download:/)
+        expect(pagination.find_by_tag('div').last.content).to_not match(/Download:/)
       end
     end
 
@@ -79,18 +81,18 @@ describe ActiveAdmin::Views::PaginatedCollection do
         Kaminari.paginate_array(posts).page(1).per(5)
       end
 
-      let(:pagination) { paginated_collection(collection, :entry_name => "message") }
+      let(:pagination) { paginated_collection(collection, entry_name: "message") }
 
       it "should use :entry_name as the collection name" do
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>1</b> message"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>1</b> message"
       end
     end
 
     context "when specifying :entry_name option with multiple items" do
-      let(:pagination) { paginated_collection(collection, :entry_name => "message") }
+      let(:pagination) { paginated_collection(collection, entry_name: "message") }
 
       it "should use :entry_name as the collection name" do
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>all 3</b> messages"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>all 3</b> messages"
       end
     end
 
@@ -100,18 +102,18 @@ describe ActiveAdmin::Views::PaginatedCollection do
         Kaminari.paginate_array(posts).page(1).per(5)
       end
 
-      let(:pagination) { paginated_collection(collection, :entry_name => "singular", :entries_name => "plural") }
+      let(:pagination) { paginated_collection(collection, entry_name: "singular", entries_name: "plural") }
 
       it "should use :entry_name as the collection name" do
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>1</b> singular"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>1</b> singular"
       end
     end
 
     context "when specifying :entry_name and :entries_name option with a multiple items" do
-      let(:pagination) { paginated_collection(collection, :entry_name => "singular", :entries_name => "plural") }
+      let(:pagination) { paginated_collection(collection, entry_name: "singular", entries_name: "plural") }
 
       it "should use :entries_name as the collection name" do
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>all 3</b> plural"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>all 3</b> plural"
       end
     end
 
@@ -124,12 +126,12 @@ describe ActiveAdmin::Views::PaginatedCollection do
       let(:pagination) { paginated_collection(collection) }
 
       it "should use 'post' as the collection name when there is no I18n translation" do
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>1</b> post"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>1</b> post"
       end
 
       it "should use 'Singular' as the collection name when there is an I18n translation" do
         I18n.stub(:translate) { "Singular" }
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>1</b> Singular"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>1</b> Singular"
       end
     end
 
@@ -137,12 +139,12 @@ describe ActiveAdmin::Views::PaginatedCollection do
       let(:pagination) { paginated_collection(collection) }
 
       it "should use 'posts' as the collection name when there is no I18n translation" do
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>all 3</b> posts"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>all 3</b> posts"
       end
 
       it "should use 'Plural' as the collection name when there is an I18n translation" do
         I18n.stub(:translate) { "Plural" }
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>all 3</b> Plural"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>all 3</b> Plural"
       end
     end
 
@@ -155,34 +157,34 @@ describe ActiveAdmin::Views::PaginatedCollection do
       let(:pagination) { paginated_collection(collection) }
 
       it "should display 'No entries found'" do
-        pagination.find_by_class('pagination_information').first.content.should == "No entries found"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "No entries found"
       end
     end
 
     context "when collection comes from find with GROUP BY" do
       let(:collection) do
-        %w{Foo Foo Bar}.each {|title| Post.create(:title => title) }
+        %w{Foo Foo Bar}.each {|title| Post.create(title: title) }
         Post.select(:title).group(:title).page(1).per(5)
       end
 
       let(:pagination) { paginated_collection(collection) }
 
       it "should display proper message (including number and not hash)" do
-        pagination.find_by_class('pagination_information').first.content.should == "Displaying <b>all 2</b> posts"
+        expect(pagination.find_by_class('pagination_information').first.content).to eq "Displaying <b>all 2</b> posts"
       end
     end
 
     context "when collection with many pages comes from find with GROUP BY" do
       let(:collection) do
-        %w{Foo Foo Bar Baz}.each {|title| Post.create(:title => title) }
+        %w{Foo Foo Bar Baz}.each {|title| Post.create(title: title) }
         Post.select(:title).group(:title).page(1).per(2)
       end
 
       let(:pagination) { paginated_collection(collection) }
 
       it "should display proper message (including number and not hash)" do
-        pagination.find_by_class('pagination_information').first.content.
-          gsub('&nbsp;',' ').should == "Displaying posts <b>1 - 2</b> of <b>3</b> in total"
+        expect(pagination.find_by_class('pagination_information').first.content.gsub('&nbsp;',' ')).
+          to eq "Displaying posts <b>1 - 2</b> of <b>3</b> in total"
       end
     end
 
@@ -194,8 +196,8 @@ describe ActiveAdmin::Views::PaginatedCollection do
       let(:pagination) { paginated_collection(collection) }
 
       it "should show the proper item counts" do
-        pagination.find_by_class('pagination_information').first.content.
-            gsub('&nbsp;',' ').should == "Displaying posts <b>61 - 81</b> of <b>81</b> in total"
+        expect(pagination.find_by_class('pagination_information').first.content.gsub('&nbsp;',' ')).
+          to eq "Displaying posts <b>61 - 81</b> of <b>81</b> in total"
       end
     end
 
@@ -209,7 +211,7 @@ describe ActiveAdmin::Views::PaginatedCollection do
 
         it "should not show the total item counts" do
           info = pagination.find_by_class('pagination_information').first.content.gsub('&nbsp;',' ')
-          info.should eq "Displaying posts <b>1 - 30</b>"
+          expect(info).to eq "Displaying posts <b>1 - 30</b>"
         end
       end
 
@@ -218,7 +220,7 @@ describe ActiveAdmin::Views::PaginatedCollection do
 
         it "should show the total item counts" do
           info = pagination.find_by_class('pagination_information').first.content.gsub('&nbsp;',' ')
-          info.should eq "Displaying posts <b>1 - 30</b> of <b>256</b> in total"
+          expect(info).to eq "Displaying posts <b>1 - 30</b> of <b>256</b> in total"
         end
       end
     end

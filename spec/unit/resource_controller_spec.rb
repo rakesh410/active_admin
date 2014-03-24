@@ -11,7 +11,7 @@ describe ActiveAdmin::ResourceController do
 
     it "should do nothing when no authentication_method set" do
       namespace = controller.class.active_admin_config.namespace
-      namespace.should_receive(:authentication_method).once.and_return(nil)
+      expect(namespace).to receive(:authentication_method).once.and_return(nil)
 
       controller.send(:authenticate_active_admin_user)
     end
@@ -19,10 +19,10 @@ describe ActiveAdmin::ResourceController do
     it "should call the authentication_method when set" do
       namespace = controller.class.active_admin_config.namespace
 
-      namespace.should_receive(:authentication_method).twice.
+      expect(namespace).to receive(:authentication_method).twice.
         and_return(:authenticate_admin_user!)
 
-      controller.should_receive(:authenticate_admin_user!).and_return(true)
+      expect(controller).to receive(:authenticate_admin_user!).and_return(true)
 
       controller.send(:authenticate_active_admin_user)
     end
@@ -34,21 +34,21 @@ describe ActiveAdmin::ResourceController do
 
     it "should return nil when no current_user_method set" do
       namespace = controller.class.active_admin_config.namespace
-      namespace.should_receive(:current_user_method).once.and_return(nil)
+      expect(namespace).to receive(:current_user_method).once.and_return(nil)
 
-      controller.send(:current_active_admin_user).should == nil
+      expect(controller.send(:current_active_admin_user)).to eq nil
     end
 
     it "should call the current_user_method when set" do
       user = double
       namespace = controller.class.active_admin_config.namespace
 
-      namespace.should_receive(:current_user_method).twice.
+      expect(namespace).to receive(:current_user_method).twice.
         and_return(:current_admin_user)
 
-      controller.should_receive(:current_admin_user).and_return(user)
+      expect(controller).to receive(:current_admin_user).and_return(user)
 
-      controller.send(:current_active_admin_user).should == user
+      expect(controller.send(:current_active_admin_user)).to eq user
     end
   end
 
@@ -84,89 +84,89 @@ describe ActiveAdmin::ResourceController do
 
     describe "performing create" do
       let(:controller){ Admin::PostsController.new }
-      let(:resource){ double("Resource", :save => true) }
+      let(:resource){ double("Resource", save: true) }
 
       before do
-        resource.should_receive(:save)
+        expect(resource).to receive(:save)
       end
 
       it "should call the before create callback" do
-        controller.should_receive(:call_before_create).with(resource)
+        expect(controller).to receive(:call_before_create).with(resource)
         controller.send :create_resource, resource
       end
       it "should call the before save callback" do
-        controller.should_receive(:call_before_save).with(resource)
+        expect(controller).to receive(:call_before_save).with(resource)
         controller.send :create_resource, resource
       end
       it "should call the after save callback" do
-        controller.should_receive(:call_after_save).with(resource)
+        expect(controller).to receive(:call_after_save).with(resource)
         controller.send :create_resource, resource
       end
       it "should call the after create callback" do
-        controller.should_receive(:call_after_create).with(resource)
+        expect(controller).to receive(:call_after_create).with(resource)
         controller.send :create_resource, resource
       end
     end
 
     describe "performing update" do
       let(:controller){ Admin::PostsController.new }
-      let(:resource){ double("Resource", :attributes= => true, :save => true) }
+      let(:resource){ double("Resource", :attributes= => true, save: true) }
       let(:attributes){ [{}] }
 
       before do
-        resource.should_receive(:attributes=).with(attributes[0])
-        resource.should_receive(:save)
+        expect(resource).to receive(:attributes=).with(attributes[0])
+        expect(resource).to receive(:save)
       end
 
       it "should call the before update callback" do
-        controller.should_receive(:call_before_update).with(resource)
+        expect(controller).to receive(:call_before_update).with(resource)
         controller.send :update_resource, resource, attributes
       end
       it "should call the before save callback" do
-        controller.should_receive(:call_before_save).with(resource)
+        expect(controller).to receive(:call_before_save).with(resource)
         controller.send :update_resource, resource, attributes
       end
       it "should call the after save callback" do
-        controller.should_receive(:call_after_save).with(resource)
+        expect(controller).to receive(:call_after_save).with(resource)
         controller.send :update_resource, resource, attributes
       end
       it "should call the after create callback" do
-        controller.should_receive(:call_after_update).with(resource)
+        expect(controller).to receive(:call_after_update).with(resource)
         controller.send :update_resource, resource, attributes
       end
     end
 
     describe "performing destroy" do
       let(:controller){ Admin::PostsController.new }
-      let(:resource){ double("Resource", :destroy => true) }
+      let(:resource){ double("Resource", destroy: true) }
 
       before do
-        resource.should_receive(:destroy)
+        expect(resource).to receive(:destroy)
       end
 
       it "should call the before destroy callback" do
-        controller.should_receive(:call_before_destroy).with(resource)
+        expect(controller).to receive(:call_before_destroy).with(resource)
         controller.send :destroy_resource, resource
       end
 
       it "should call the after destroy callback" do
-        controller.should_receive(:call_after_destroy).with(resource)
+        expect(controller).to receive(:call_after_destroy).with(resource)
         controller.send :destroy_resource, resource
       end
     end
   end
 end
 
-describe Admin::PostsController, :type => "controller" do
+describe Admin::PostsController, type: "controller" do
 
   describe 'retreiving the resource' do
     let(:controller){ Admin::PostsController.new }
-    let(:post) { Post.new :title => "An incledibly unique Post Title" }
+    let(:post) { Post.new title: "An incledibly unique Post Title" }
 
     before do
       Post.stub(:find).and_return(post)
       controller.class_eval { public :resource }
-      controller.stub(:params).and_return({ :id => '1' })
+      controller.stub(:params).and_return({ id: '1' })
     end
 
     subject { controller.resource }
@@ -183,7 +183,7 @@ describe Admin::PostsController, :type => "controller" do
       end
 
       it 'returns a PostDecorator that wraps the post' do
-        subject.title.should == post.title
+        expect(subject.title).to eq post.title
       end
     end
   end
@@ -191,7 +191,7 @@ describe Admin::PostsController, :type => "controller" do
   describe 'retreiving the resource collection' do
     let(:controller){ Admin::PostsController.new }
     before do
-      Post.create!(:title => "An incledibly unique Post Title") if Post.count == 0
+      Post.create!(title: "An incledibly unique Post Title") if Post.count == 0
       controller.class_eval { public :collection }
     end
 
@@ -199,12 +199,12 @@ describe Admin::PostsController, :type => "controller" do
 
     it {
       pending # doesn't pass when running whole spec suite (WTF)
-      should be_kind_of(ActiveRecord::Relation)
+      should be kind_of(ActiveRecord::Relation)
     }
 
     it "returns a collection of posts" do
       pending # doesn't pass when running whole spec suite (WTF)
-      subject.first.should be_kind_of(Post)
+      expect(subject.first).to be_kind_of(Post)
     end
 
     context 'with a decorator' do
@@ -213,12 +213,12 @@ describe Admin::PostsController, :type => "controller" do
 
       it 'returns a PostDecorator' do
         pending # doesn't pass when running whole spec suite (WTF)
-        subject.should be_kind_of(PostDecorator::DecoratedEnumerableProxy)
+        expect(subject).to be_kind_of(PostDecorator::DecoratedEnumerableProxy)
       end
 
       it 'returns a PostDecorator that wraps the post' do
         pending # doesn't pass when running whole spec suite (WTF)
-        subject.first.title.should == Post.first.title
+        expect(subject.first.title).to eq Post.first.title
       end
     end
   end
@@ -245,7 +245,7 @@ describe Admin::PostsController, :type => "controller" do
         pending # doesn't pass when running whole spec suite (WTF)
 
         expect {
-          post(:batch_action, :batch_action => "derp", :collection_selection => ["1"])
+          post(:batch_action, batch_action: "derp", collection_selection: ["1"])
         }.to raise_error("Couldn't find batch action \"derp\"")
       end
     end
@@ -255,7 +255,7 @@ describe Admin::PostsController, :type => "controller" do
         pending # doesn't pass when running whole spec suite (WTF)
 
         expect {
-          post(:batch_action, :collection_selection => ["1"])
+          post(:batch_action, collection_selection: ["1"])
         }.to raise_error("Couldn't find batch action \"\"")
       end
     end

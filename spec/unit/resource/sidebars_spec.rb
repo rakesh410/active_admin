@@ -17,15 +17,15 @@ describe ActiveAdmin::Resource::Sidebars do
     end
 
     it "should add a sidebar section" do
-      resource.should have(1).sidebar_sections
+      expect(resource).to have(1).sidebar_sections
     end
 
   end
 
   describe "retrieving sections for a controller action" do
 
-    let(:only_index){ ActiveAdmin::SidebarSection.new(:help, :only => :index) }
-    let(:only_show){ ActiveAdmin::SidebarSection.new(:help, :only => :show) }
+    let(:only_index){ ActiveAdmin::SidebarSection.new(:help, only: :index) }
+    let(:only_show){ ActiveAdmin::SidebarSection.new(:help, only: :show) }
 
     before do
       resource.clear_sidebar_sections!
@@ -34,8 +34,8 @@ describe ActiveAdmin::Resource::Sidebars do
     end
 
     it "should only return the relevant action items" do
-      resource.should have(2).sidebar_sections
-      resource.sidebar_sections_for("index").should == [only_index]
+      expect(resource).to have(2).sidebar_sections
+      expect(resource.sidebar_sections_for("index")).to eq [only_index]
     end
 
   end

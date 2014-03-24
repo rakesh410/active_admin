@@ -12,13 +12,11 @@ describe MethodOrProcHelper do
   describe "#call_method_or_exec_proc" do
 
     it "should call the method in the context when a symbol" do
-      context.call_method_or_exec_proc(:receiver_in_context).
-        should == receiver
+      expect(context.call_method_or_exec_proc(:receiver_in_context)).to eq receiver
     end
 
     it "should call the method in the context when a string" do
-      context.call_method_or_exec_proc("receiver_in_context").
-        should == receiver
+      expect(context.call_method_or_exec_proc("receiver_in_context")).to eq receiver
     end
 
     it "should exec a proc in the context" do
@@ -33,22 +31,20 @@ describe MethodOrProcHelper do
 
   describe "#call_method_or_proc_on" do
 
-    context "when a symbol" do
+    [:hello, 'hello'].each do |key|
+      context "when a #{key.class}" do
+        it "should call the method on the receiver" do
+          expect(receiver).to receive(key).and_return 'hello'
 
-      it 'should call the method on the receiver' do
-        receiver.should_receive(:hello).and_return("hello")
+          expect(context.call_method_or_proc_on(receiver, key)).to eq 'hello'
+        end
 
-        context.call_method_or_proc_on(receiver, "hello").
-          should == "hello"
+        it "should receive additional arguments" do
+          expect(receiver).to receive(key).with(:world).and_return 'hello world'
+
+          expect(context.call_method_or_proc_on(receiver, key, :world)).to eq 'hello world'
+        end
       end
-
-      it "should receive additional arguments" do
-        receiver.should_receive(:hello).with("world").and_return("hello world")
-
-        context.call_method_or_proc_on(receiver, :hello, "world").
-          should == "hello world"
-      end
-
     end
 
     context "when a proc" do
@@ -75,7 +71,7 @@ describe MethodOrProcHelper do
 
     end
 
-    context "when a proc and :exec => false" do
+    context "when a proc and exec: false" do
 
       it "should call the proc and pass in the receiver" do
         obj_not_in_context = double
@@ -85,7 +81,7 @@ describe MethodOrProcHelper do
         end
 
         expect {
-          context.call_method_or_proc_on(receiver,test_proc, :exec => false)
+          context.call_method_or_proc_on(receiver,test_proc, exec: false)
         }.to raise_error("Success!")
       end
 

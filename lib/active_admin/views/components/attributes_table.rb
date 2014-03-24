@@ -4,8 +4,8 @@ module ActiveAdmin
     class AttributesTable < ActiveAdmin::Component
       builder_method :attributes_table_for
 
-      def build(record_or_collection, *attrs)
-        @collection = Array(record_or_collection)
+      def build(obj, *attrs)
+        @collection     = obj.respond_to?(:each) && !obj.is_a?(Hash) ? obj : [obj]
         @resource_class = @collection.first.class
         options = { }
         options[:for] = @collection.first if single_record?
@@ -59,23 +59,23 @@ module ActiveAdmin
           col # column for row headers
           @collection.each do |record|
             classes = Arbre::HTML::ClassList.new
-            classes << cycle(:even, :odd, :name => self.class.to_s)
+            classes << cycle(:even, :odd, name: self.class.to_s)
             classes << dom_class_name_for(record)
-            col(:id => dom_id_for(record), :class => classes)
+            col(id: dom_id_for(record), class: classes)
           end
         end
       end
 
       def header_content_for(attr)
         if @resource_class.respond_to?(:human_attribute_name)
-          @resource_class.human_attribute_name(attr, :default => attr.to_s.titleize)
+          @resource_class.human_attribute_name(attr, default: attr.to_s.titleize)
         else
           attr.to_s.titleize
         end
       end
 
       def empty_value
-        span I18n.t('active_admin.empty'), :class => "empty"
+        span I18n.t('active_admin.empty'), class: "empty"
       end
 
       def content_for(record, attr)
@@ -87,10 +87,12 @@ module ActiveAdmin
       def find_attr_value(record, attr)
         if attr.is_a?(Proc)
           attr.call(record)
-        elsif attr.to_s[/\A(.+)_id\z/] && record.respond_to?($1.to_sym)
-          record.send($1.to_sym)
-        else
-          record.send(attr.to_sym)
+        elsif attr.to_s[/\A(.+)_id\z/] && record.respond_to?($1)
+          record.send($1)
+        elsif record.respond_to? attr
+          record.send(attr)
+        elsif record.respond_to? :[]
+          record[attr]
         end
       end
 

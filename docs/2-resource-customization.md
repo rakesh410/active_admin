@@ -1,11 +1,11 @@
 # Working with Resources
 
-Every Active Admin resource corresponds to a Rails model. So before creating a 
+Every Active Admin resource corresponds to a Rails model. So before creating a
 resource you must first create a Rails model for it.
 
 ## Create a Resource
 
-The basic command for creating a resource is `rails g active_admin:resource Post`. 
+The basic command for creating a resource is `rails g active_admin:resource Post`.
 The generator will produce an empty `app/admin/post.rb` file like so:
 
 ```ruby
@@ -17,15 +17,56 @@ end
 ## Setting up Strong Parameters
 
 Rails 4 replaces `attr_accessible` with [Strong Parameters](https://github.com/rails/strong_parameters),
-which moves attribute whitelisting from the model to the controller. There are
-talks ([#2594](https://github.com/gregbell/active_admin/issues/2594)) on providing a
-cleaner DSL, but for now you do so like this:
+which moves attribute whitelisting from the model to the controller.
+
+Use the `permit_params` method to define which attributes may be changed:
+
+```ruby
+ActiveAdmin.register Post do
+  permit_params :title, :content, :publisher_id
+end
+```
+
+For nested associations in your form, this is how you define their attributes:
+
+```ruby
+ActiveAdmin.register Post do
+  permit_params :title, :content, :publisher_id,
+    tags_attributes: [:id, :name, :description, :_destroy]
+end
+
+# Note that `accepts_nested_attributes_for` is still required:
+class Post < ActiveRecord::Base
+  accepts_nested_attributes_for :tags, allow_destroy: true
+end
+```
+
+If you want to dynamically choose which attributes can be set, pass a block:
+
+```ruby
+ActiveAdmin.register Post do
+  permit_params do
+    params = [:title, :content, :publisher_id]
+    params.push :author_id if current_user.admin?
+    params
+  end
+end
+```
+
+The `permit_params` call creates a method called `permitted_params`. You should use this method when overriding `create` or `update` actions:
 
 ```ruby
 ActiveAdmin.register Post do
   controller do
-    def permitted_params
-      params.permit post: [:title, :content, :author]
+    def create
+      # Good
+      @post = Post.new(permitted_params)
+      # Bad
+      @post = Post.new(params[:post])
+
+      if @post.save
+        # ...
+      end
     end
   end
 end
@@ -52,9 +93,6 @@ ActiveAdmin.register Post, as: "Article"
 ```
 
 The resource will then be available at `/admin/articles`.
-
-This will also change the key of the resource params passed to the controller.
-In Rails 4, the `permitted_params` key will need to be changed from `:post` to `:article`.
 
 ## Customize the Namespace
 
@@ -255,7 +293,7 @@ If you need to completely replace the record retrieving code (e.g., you have a c
 ```ruby
 ActiveAdmin.register Post do
   controller do
-    def resource
+    def find_resource
       Post.where(id: params[:id]).first!
     end
   end
